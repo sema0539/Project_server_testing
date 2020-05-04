@@ -1,14 +1,17 @@
-DROP TABLE organizations;
+DROP TABLE IF EXISTS organizations CASCADE;
+DROP TABLE IF EXISTS events CASCADE;
+DROP TABLE IF EXISTS archives CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS saved_events CASCADE;
+
 CREATE TABLE IF NOT EXISTS organizations(
-  organization_id SERIAL PRIMARY KEY,
+  organization_id SERIAL,
   org_name VARCHAR(50),
   contact VARCHAR(50),
-  upcoming_events INT,
-  UNIQUE(contact)
-  );
+  upcoming_events INT[],
+  PRIMARY KEY(organization_id, contact)
+);
 
-
-DROP TABLE events;
 CREATE TABLE IF NOT EXISTS events (
   event_id SERIAL PRIMARY KEY,
   event_title VARCHAR(50),
@@ -18,44 +21,36 @@ CREATE TABLE IF NOT EXISTS events (
   attribute SMALLINT,
   max_size SMALLINT,
   organization_id SERIAL,
+  FOREIGN KEY (organization_id, contact) REFERENCES organizations(organization_id, contact),
   current_attending SMALLINT DEFAULT 0,
   description TEXT
 );
 
-ALTER TABLE events ADD CONSTRAINT contact FOREIGN KEY (contact) REFERENCES organizations(contact) MATCH FULL;
-ALTER TABLE events ADD CONSTRAINT organization_id FOREIGN KEY (organization_id) REFERENCES organizations(organization_id) MATCH FULL;
-
-DROP TABLE archives;
 CREATE TABLE IF NOT EXISTS archives (
   archive_id SERIAL PRIMARY KEY,
   event_id SERIAL,
+  FOREIGN KEY (event_id) REFERENCES events(event_id),
   last_update TIMESTAMP
 );
 
-ALTER TABLE archives ADD CONSTRAINT event_id FOREIGN KEY (event_id) REFERENCES events(event_id) MATCH FULL;
+//
+// DO NOT RUN ANY BELOW
+//
 
-DROP TABLE users;
 CREATE TABLE IF NOT EXISTS users (
   user_id SERIAL PRIMARY KEY,
-  user_email VARCHAR(50),
-  first_name VARCHAR(50),
-  last_name VARCHAR(50),
-  password VARCHAR(30)
+  email VARCHAR(255) NOT NULL,
+  first_name VARCHAR(255) NOT NULL,
+  last_name VARCHAR(255) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  saved_events INT[]
 );
 
-DROP TABLE saved_events;
 CREATE TABLE IF NOT EXISTS saved_events (
   user_id SERIAL,
   event_id SERIAL,
+  FOREIGN KEY (user_id) REFERENCES users(user_id),
+  FOREIGN KEY (event_id) REFERENCES events(event_id),
+  PRIMARY KEY (user_id, event_id),
   timesaved TIMESTAMP
 );
-
-ALTER TABLE saved_events ADD CONSTRAINT user_id FOREIGN KEY (user_id) REFERENCES users(user_id) MATCH FULL;
-ALTER TABLE saved_events ADD CONSTRAINT event_id FOREIGN KEY (event_id) REFERENCES events(event_id) MATCH FULL;
-
-INSERT INTO organizations(org_name, contact, upcoming_events) VALUES('Nepal Org!', 'ewb.colorado@gmail.com', 2);
-INSERT INTO organizations(org_name, contact, upcoming_events) VALUES('Leeds BUSM', 'leedsconsultinggroup@colorado.edu', 5);
-INSERT INTO events(event_title, start_date_time, location, contact, attribute, max_size, organization_id, current_attending, description)
-VALUES('EWB Nepal Presentation', '2020-04-25 12:00:00', 'Virtual Zoom', 'ewb.colorado@gmail.com', 1, 200, 1, 50, 'Learn about EWB Nepal!');
-INSERT INTO events(event_title, start_date_time, location, contact, attribute, max_size, organization_id, current_attending, description) VALUES('Leeds Consulting Group', '2020-04-27 15:00:00', 'Virtual Hangouts', 'leedsconsultinggroup@colorado.edu', 2, 200, 1, 50, 'Learn about LCG!')
-;
